@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "Person.h"
 
 @interface ViewController ()
 
@@ -33,6 +34,8 @@
     });
     */
     
+    /*
+    // GCD
     // 创建队列组
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);
@@ -57,6 +60,69 @@
     dispatch_group_notify(group, dispatch_get_main_queue(), ^{
         NSLog(@"finish");
     });
+    */
+    
+    /*
+    // NSOperation和NSOperationQueue
+    NSOperationQueue *operationQueue = [[NSOperationQueue alloc] init];
+    // 设置NSOperationQueue的最大并发数，如果是1那么是串行队列
+    operationQueue.maxConcurrentOperationCount = 1;
+    // 添加任务
+    [operationQueue addOperationWithBlock:^{
+        NSLog(@"operationQueue addOperationWithBlock");
+    }];
+    */
+    
+    /*
+    // NSOperation依赖方法使用
+    NSBlockOperation *operation1 = [NSBlockOperation blockOperationWithBlock:^{
+        // task
+        NSLog(@"operation1");
+    }];
+    // 添加任务,该方法需在start方法之前执行
+    [operation1 addExecutionBlock:^{
+        NSLog(@"operation1 add new task");
+    }];
+    NSBlockOperation *operation2 = [NSBlockOperation blockOperationWithBlock:^{
+        NSLog(@"operation2");
+    }];
+    NSBlockOperation *operation3 = [NSBlockOperation blockOperationWithBlock:^{
+        NSLog(@"operation3");
+    }];
+    [operation2 addDependency:operation1];
+    [operation3 addDependency:operation2];
+    NSOperationQueue *dependecyQueue = [[NSOperationQueue alloc] init];
+    [dependecyQueue addOperations:@[operation3, operation1, operation2] waitUntilFinished:NO];
+    */
+    
+    // 延时执行
+    Person *person = [[Person alloc] init];
+    person.name = @"testuser";
+    person.age = 20;
+    [self performSelector:@selector(testForDelayAction:) withObject:person afterDelay:1.5];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//        NSLog(@"dispatch_after() function isMainThread:%@",[NSThread currentThread].isMainThread?@"yes":@"no");
+        [self testForDelayAction:person];
+    });
+    
+    
+    dispatch_queue_t queue = dispatch_queue_create("temQueue", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_async(queue, ^{
+        NSLog(@"temQueue isMainThread:%@",[NSThread currentThread].isMainThread?@"yes":@"no");
+        Person *temPerson = [[Person alloc] init];
+        temPerson.name = @"temPerson";
+        temPerson.age = 20;
+        dispatch_after(3, queue, ^{
+//            NSLog(@"dispatch_after function isMainThread:%@",[NSThread currentThread].isMainThread?@"yes":@"no");
+            [self testForDelayAction:temPerson];
+        });
+    });
+}
+
+- (void)testForDelayAction:(id)object {
+    Person *person = (Person *)object;
+    NSLog(@"delay action, person's name is %@",person.name);
 }
 
 - (void)didReceiveMemoryWarning {

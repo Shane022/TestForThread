@@ -10,4 +10,7 @@
 
 @implementation Person
 
+@synthesize name;
+@synthesize age;
+
 @end
